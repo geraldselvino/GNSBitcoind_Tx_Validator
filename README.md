@@ -7,7 +7,7 @@ To run it in a container, you need docker and docker-compose. All dependencies w
 To run it in stand-alone, you need node.js, npm, mysql for node, seneca framework
 
 # Installation
-- Clone this repository i.e. git clone https://github.com/geraldselvino/GNSWebRTC_Transcriptionist
+- Clone this repository i.e. git clone https://github.com/geraldselvino/GNSBitcoind_Tx_Validator
 - Go to command line and change to cloned directory
 /* Docker */
 - Type docker-compose up to start the microservice
