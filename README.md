@@ -2,7 +2,7 @@
 A Node.js microservice to filter and check for valid transactions from Bitcoind (https://en.bitcoin.it/wiki/Bitcoind) then stores those valid Tx on a database. It can be run natively or dockerized (the docker scripts are provided)
 
 # Requirement
-To run it in a container, you need docker and docker-compose. All dependencies will be handled by docker then.
+To run it in a container, you need docker and docker-compose. All dependencies will be handled by docker.
 
 To run it in stand-alone, you need node.js, npm, mysql for node, seneca framework
 
@@ -11,10 +11,10 @@ To run it in stand-alone, you need node.js, npm, mysql for node, seneca framewor
 - Go to command line and change to cloned directory 
 
 **Docker** 
-- Type `docker-compose` up to start the microservice 
+- Type `docker-compose` up to build and start the microservice 
 
 **Stand-alone** 
-- Changed the host property in dbconfig.js to your hostname 
+- Change the host property in dbconfig.js to your hostname 
 - Type `npm install` 
 - Type `npm start` to start the microservice 
 
