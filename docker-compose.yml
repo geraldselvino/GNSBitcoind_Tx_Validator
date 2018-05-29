@@ -1,0 +1,33 @@
+#######################################################
+# Copyright (c) 2018, Gerald Selvino 
+# <gerald.selvino@protonmail.com> All rights reserved.
+#
+# The docker-compose config file
+#######################################################
+
+version: '3'
+services:
+  webservice:
+    image: gnsbtctxvalidator/1.0.0
+    build: .
+    links:
+      - db
+    command: npm start
+    volumes:
+      - .:/GNSBitcoindTxValidator
+      - /GNSBitcoindTxValidator/node_modules
+    depends_on:
+      - db
+    ports:
+      - "10101:10101"
+  db:
+    image: mariadb:10.3.6
+    environment:
+      MYSQL_ROOT_PASSWORD: user
+      MYSQL_USER: btxvalidator-user
+      MYSQL_PASSWORD: btxvalidator-pass
+      MYSQL_DATABASE: btxvalidator-db
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+    ports:
+      - "3308:3306"
