@@ -1,5 +1,5 @@
 # GNSBitcoind_Tx_Validator
-A Node.js microservice to filter and check for valid transactions from Bitcoind (https://en.bitcoin.it/wiki/Bitcoind) then stores those valid Tx on a database. It can be run natively or dockerized (the docker scripts are provided)
+A Node.js microservice to filter and check for valid transactions from Bitcoind (https://en.bitcoin.it/wiki/Bitcoind) then stores those valid Tx on a database. Then it returns a JSON containing the transaction id's of the inserted records. It can be run natively or dockerized (the docker scripts are provided)
 
 # Requirement
 To run it in a container, you need docker and docker-compose. All dependencies will be handled by docker.
@@ -11,7 +11,7 @@ To run it in stand-alone, you need node.js, npm, mysql for node, seneca framewor
 - Go to command line and change to cloned directory 
 
 **Docker** 
-- Type `docker-compose` up to build and start the microservice 
+- Type `docker-compose up` to build and start the microservice 
 
 **Stand-alone** 
 - Change the host property in dbconfig.js to your hostname 
@@ -29,12 +29,13 @@ var headers = {
     'Content-Length': datastr.length
 };
 var options = {
-    host: localhost:10101,
+    host: localhost,
+    port: 10101,
     path: "/act?cmd=filterValidBitcoinTx&txtype=deposit"
     method: "POST",
     headers: headers
 };
-var req = https.request(options, function(res) {
+var req = http.request(options, function(res) {
     res.setEncoding('utf-8');
 
     var responseString = '';
@@ -50,7 +51,7 @@ var req = https.request(options, function(res) {
         } catch(exception) {
             console.error(exception.message);
         } finally {
-            success(responseObject);
+            callback(responseObject); //Your callback method to handle the object result. Or handle it in this block
         }
     });
 });
@@ -60,3 +61,9 @@ req.on('error', function(err) {
 req.write(datastr);
 req.end();
 ```
+
+Check the test folder for a working client driver for this microservice. Simply run the microservice then run the client to see how it works.
+
+e.g.
+- Open a terminal in the repo directory `docker-compose up`
+- Open a new terminal then type `node test/test.js`

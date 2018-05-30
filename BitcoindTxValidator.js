@@ -9,6 +9,8 @@
 * those valid transactions to the database
 *******************************************************/
 var db = require ("./db.js");
+var returnObj = [];
+var currentInsertTx = {index: 0};
 
 //Query the database to see if a record exists. Calls a callback
 //depending on the result of the query
@@ -24,6 +26,7 @@ var queryExisting = function(querystring, txparams) {
         .on('result',
         function(row) {
             txparams.isExists = true;
+            ++currentInsertTx.index;
         })
         .on('end',
         function() {
@@ -47,6 +50,8 @@ var insertTx = function(objparams, txparams) {
                         db.client.end();
                         console.error(err);
                     }
+                    returnObj.push({txid: objparams.txid});
+                    ++currentInsertTx.index;
                 });
             }
             clearInterval(intervalHandle);
@@ -73,21 +78,21 @@ var isValidAmount =  function(amount) {
 var main = function(txtype, txobj) {
     var txCounter = 0;
     var txExists = [];
-    for (var txelem in txobj.transactions) {
-        if (txobj.transactions[txelem].confirmations >= 6 //There must be at least 6 confirmations
-            && txobj.transactions[txelem].amount > 0 //Deposit amount must be greater than 0
-            && isValidAmount(txobj.transactions[txelem].amount)) { //Amount must have a maximum of 8 decimals, because it is the specs of Bitcoin
+    for (var txelem in txobj) {
+        if (txobj[txelem].confirmations >= 6 //There must be at least 6 confirmations
+            && txobj[txelem].amount > 0 //Deposit amount must be greater than 0
+            && isValidAmount(txobj[txelem].amount)) { //Amount must have a maximum of 8 decimals, because it is the specs of Bitcoin
             
             var isTxTypeValid = false;
             switch (txtype) {
                 case "deposit":
-                    if (txobj.transactions[txelem].category == "receive" //Transaction is a deposit
-                        || txobj.transactions[txelem].category == "generate") { //Transaction is mined
+                    if (txobj[txelem].category == "receive" //Transaction is a deposit
+                        || txobj[txelem].category == "generate") { //Transaction is mined
                         isTxTypeValid = true;
                     }
                     break;
                 case "withdraw":
-                    if (txobj.transactions[txelem].category == "send") { //Transaction is a withdrawal
+                    if (txobj[txelem].category == "send") { //Transaction is a withdrawal
                         isTxTypeValid = true;
                     }
                     break;
@@ -96,17 +101,17 @@ var main = function(txtype, txobj) {
             }
             
             if (isTxTypeValid) {
-                var address = txobj.transactions[txelem].address;
-                var amount = Number(txobj.transactions[txelem].amount.toFixed(8));
-                var txid = txobj.transactions[txelem].txid;
-                var vout = txobj.transactions[txelem].vout;
+                var address = txobj[txelem].address;
+                var amount = Number(txobj[txelem].amount.toFixed(8));
+                var txid = txobj[txelem].txid;
+                var vout = txobj[txelem].vout;
                 txExists.push({isExists: null, txCounter: txCounter});
-                //Check if there are duplicate entries already inserted in the database. In Bitcoin uniqueness is
+                //Check if there are duplicate entries already inserted in the database. In Bitcoin, uniqueness is
                 //the combination of txid and vout, both must be unique to be able to say that it is a different transaction
                 queryExisting("SELECT txid FROM transactions WHERE txid='" + txid + "' OR vout=" + vout,
                                txExists[txCounter]);
                 
-                //Async routine to check the isExists flag of each transaction and perform an insert
+                //Routine to check the isExists flag of each transaction and perform an insert
                 //in the database if the flag is false. It is being set in the function queryExisting
                 insertTx({address: address, amount: amount, txid: txid, vout: vout}, txExists[txCounter]); //Insert the values in db if query does not exists
 
@@ -114,6 +119,7 @@ var main = function(txtype, txobj) {
             }
         }
     }
+    return txCounter;
 }
 
 require('seneca')() //Uses Seneca framework to start our microservice
@@ -124,12 +130,17 @@ require('seneca')() //Uses Seneca framework to start our microservice
         //we are connected to the database
         var timerhandle = setInterval(function() {
             if (db.status == "connected") {
-                main(message.txtype, message.data);
-                console.log ("main executed");
+                var txCount = main(message.txtype, message.transactions);
                 clearInterval(timerhandle);
+                checkerHandle = setInterval(function() {
+                    if (txCount == currentInsertTx.index) {
+                        console.log("Returning a JSON object");
+                        done(null, returnObj);
+                        clearInterval(checkerHandle);
+                    }
+                }, 500);
             }
         }, 500);
-        done(null, { success: true });
     }
     )
 .listen()
