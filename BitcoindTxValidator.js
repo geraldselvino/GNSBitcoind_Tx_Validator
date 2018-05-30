@@ -6,7 +6,9 @@
 * 10101 for call to service filterValidBitcoinTx.
 * It then parse the JSON object from the POST request
 * and check for valid bitcoin transactions. Pushes
-* those valid transactions to the database
+* those valid transactions to the database, and return
+* a JSON object containing the txid of the inserted
+* records.
 *******************************************************/
 var db = require ("./db.js");
 var returnObj = [];
